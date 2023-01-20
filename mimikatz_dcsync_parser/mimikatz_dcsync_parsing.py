@@ -70,10 +70,15 @@ def parse_user_hash_data():
 
 	return reused_pws,df
 
-def print_statistics(df):
+def print_statistics(df,reused):
+	total_users = len(df)
+	users_reuse_pws = len(reused)
+	percent_reuse = str(int((users_reuse_pws/total_users)*100))
+	pws_in_reuse = len(reused['nthash'].unique())
 	print("\n\n------Statistics-------")
-	print("Total number of users reusing passwords: ",len(df))
-	print("Number of unique passwords in reuse: ",len(df['nthash'].unique()))
+	print("Total number of users:",total_users)
+	print("Total number of users reusing passwords:",users_reuse_pws,"("+percent_reuse+"%)")
+	print("Number of unique passwords in reuse:",pws_in_reuse)
 	
 
 def output_to_reportable_format(df,reused):
@@ -99,19 +104,19 @@ def main():
 
 
 	if(args.reused_pws):
-		print("[+]----Gathering reused password data...")
+		print("[+] Gathering reused password data...")
 		grouped_hashes=output_to_reportable_format(df,reused) #mangle data to the form we want for exporting
 		grouped_hashes.index=numpy.arange(1,len(grouped_hashes)+1)
 		grouped_hashes.to_excel(args.filename.split(".")[0]+'_grouped_byhash.xlsx')
 
 
 	if(args.crackable):
-		print("[+]----Converting to crackable format...")
+		print("[+] Converting to crackable format...")
 		convert_to_crackable()
 
 	if(args.password_stats):
-		print("[+]----Printing statistics...")
-		print_statistics(reused)
+		print("[+] Printing statistics...")
+		print_statistics(df,reused)
 
 
 	os.remove(WORKING_FILE)
