@@ -16,7 +16,8 @@ parser.add_argument('-c','--crackable',action='store_true',default=False, help='
 parser.add_argument('-s','--password_stats',action='store_true',default=False,help='parse password statistics')
 parser.add_argument('-p','--reused_pws',action='store_true',default=False,help='get reused passwords and output to file')
 parser.add_argument('-b','--hashedby',default='john',help='used with -i, sets format for solved hash file(either john or hashcat, default john)',)
-parser.add_argument('-i','--solved_hashes',help='file with solved hashes',)
+parser.add_argument('-i','--solved_hashes',help='file with solved hashes')
+parser.add_argument('-a','--active_users',help='file with list of all active users')
 parser.add_argument('-k','--kerberoastable_users',help='file with kerberoastable users')
 parser.add_argument('-r','--regular',action='store_true',default=False,help='perform --crackable --reused_pws and --password-stats')
 
@@ -93,7 +94,28 @@ def output_to_reportable_format(df,reused):
 
 	return df_grouped
 
-	
+
+def get_solved_hashes(hashfile):
+	solved={}
+	with open(hashfile,'r') as file:
+		for line in file:
+			userpass=line.split("::")[0]
+			usr_pw=userpass.split(":")
+			if len(usr_pw) > 1:
+				solved[usr_pw[0]]=usr_pw[1]
+			else:
+				solved[usr_pw[0]]=''
+	return(solved)
+
+def get_solved_hashes_active_users(activelist,solved):
+	onlyactive={}
+	with open(activelist,'r') as active_users:
+		for user in active_users:
+			u=user.strip('\n')
+			if u in solved:
+				onlyactive[u]=solved[u]
+
+	return onlyactive
 
 def main():
 	create_working_file(args.filename)#file that other funcions will refer to
@@ -118,7 +140,18 @@ def main():
 		print("[+] Printing statistics...")
 		print_statistics(df,reused)
 
+	if(args.solved_hashes):
+		print("[+]Getting solved hash file...")
+		solved=get_solved_hashes(args.solved_hashes)
+		print(len(solved))
+		if(args.active_users):
+			activ=get_solved_hashes_active_users(args.active_users,solved)
+			output=open("output.txt","w")
+			for k,v in activ.items():
+				output.writelines(f'{k}:{v}\n')
+			output.close()
 
 	os.remove(WORKING_FILE)
 
 main()
+
